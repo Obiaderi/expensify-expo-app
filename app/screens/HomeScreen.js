@@ -1,55 +1,67 @@
-import { useNavigation } from "@react-navigation/native";
-import React from "react";
+import { useIsFocused, useNavigation } from "@react-navigation/native";
+import React, { useEffect, useState } from "react";
 import { FlatList, Image, Text, TouchableOpacity, View } from "react-native";
+import { signOut } from "firebase/auth";
 
 // Custom Imports
 import randomImage from "../../assets/images/randomImages";
 import EmptyList from "../components/EmptyList";
 import ScreenWrapper from "../components/ScreenWrapper";
+import { auth, tripsRef } from "../config/firebase";
 import { colors } from "../themes/colors";
-
-const trips = [
-  {
-    id: 1,
-    place: "Kathmandu",
-    country: "Nepal",
-  },
-  {
-    id: 2,
-    place: "London Eye",
-    country: "England",
-  },
-  {
-    id: 3,
-    place: "Washington",
-    country: "USA",
-  },
-  {
-    id: 4,
-    place: "New York",
-    country: "America",
-  },
-  {
-    id: 5,
-    place: "Bosston",
-    country: "Nepal",
-  },
-  {
-    id: 6,
-    place: "Marrid",
-    country: "Las vegas",
-  },
-];
+import { useSelector } from "react-redux";
+import { getDocs, query, where } from "firebase/firestore";
+import LoadingSpinner from "../components/LoadingSpinner";
 
 function HomeScreen(props) {
+  const [trips, setTrips] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const { user } = useSelector((state) => state.user);
+
+  const isFocused = useIsFocused();
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    if (isFocused) {
+      fetchTrips();
+    }
+  }, [isFocused]);
+
+  const fetchTrips = async () => {
+    try {
+      setLoading(true);
+      const q = await query(tripsRef, where("userId", "==", user.uid));
+      const querySnapshot = await getDocs(q);
+      const data = [];
+      querySnapshot.forEach((doc) => {
+        data.push({ ...doc.data(), id: doc.id });
+      });
+      setTrips(data);
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+    }
+  };
+
   const navigation = useNavigation();
   return (
     <ScreenWrapper className="flex-1">
       <View className="flex-row justify-between items-center p-4">
-        <Text className={`${colors.heading} font-bold text-3xl shadow-sm`}>
+        <Text className={`${colors.heading} font-bold text-3xl`}>
           Expensify
         </Text>
-        <TouchableOpacity className="p-2 px-3 bg-white border-gray-200 rounded-full">
+        <TouchableOpacity
+          style={{ elevation: 2 }}
+          onPress={handleLogout}
+          className="p-2 px-3 bg-white border-gray-200 rounded-full"
+        >
           <Text className={colors.heading}>Logout</Text>
         </TouchableOpacity>
       </View>
@@ -65,13 +77,15 @@ function HomeScreen(props) {
             Recent Trips
           </Text>
           <TouchableOpacity
+            style={{ elevation: 2 }}
             onPress={() => navigation.navigate("AddTrip")}
             className="p-2 px-3 bg-white border-gray-200 rounded-full"
           >
             <Text className={colors.heading}>Add Trip</Text>
           </TouchableOpacity>
         </View>
-        <View style={{ height: 430 }}>
+        <View className="relative" style={{ height: 430 }}>
+          {loading && <LoadingSpinner />}
           <FlatList
             data={trips}
             numColumns={2}
@@ -84,8 +98,9 @@ function HomeScreen(props) {
             className="mx-1"
             renderItem={({ item }) => (
               <TouchableOpacity
+                style={{ elevation: 1 }}
                 onPress={() => navigation.navigate("TripExpenses", { ...item })}
-                className="bg-white p-3 rounded-2xl mb-3 shadow-md"
+                className="bg-white p-3 rounded-2xl mb-3"
               >
                 <View>
                   <Image source={randomImage()} className="w-36 h-36 mb-2" />

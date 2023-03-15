@@ -7,6 +7,7 @@ function FormWithTitle({
   title,
   style,
   textStyle,
+  inputStyles,
   ...otherProps
 }) {
   return (
@@ -16,7 +17,7 @@ function FormWithTitle({
         {...otherProps}
         value={value}
         onChangeText={onChangeText}
-        className="p-3 px-4 bg-white rounded-full shadow-sm"
+        className={`${inputStyles} p-3 px-4 bg-white rounded-full shadow-sm`}
       />
     </View>
   );

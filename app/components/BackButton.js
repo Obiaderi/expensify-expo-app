@@ -9,6 +9,7 @@ function BackButton(props) {
 
   return (
     <TouchableOpacity
+      style={{ elevation: 1 }}
       onPress={() => navigation.goBack()}
       className="bg-white rounded-full h-8 w-8"
     >
